@@ -1,4 +1,5 @@
 import os
+import random
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -186,6 +187,40 @@ async def mock_musher_autocomplete(interaction: discord.Interaction, current: st
         for m in source
         if current.lower() in m.name.lower()
     ][:25]
+
+
+# ── bot auto-pick (CPU player for mock drafts) ─────────────────────────────
+
+async def bot_auto_pick(channel: discord.TextChannel, mock: DraftSession):
+    """Automatically picks for the bot whenever it's the bot's turn in a mock draft."""
+    while not mock.is_complete and mock.current_drafter_id == bot.user.id:
+        available = mock.available()
+        if mock._user_needs_rookie(bot.user.id):
+            available = [m for m in available if m.is_rookie]
+        if not available:
+            break
+        chosen = random.choice(available)
+        success, _, picked, pick_num, round_num = mock.make_pick(bot.user.id, chosen.name)
+        if not success:
+            break
+        embed = discord.Embed(
+            title=f"🤖 Bot Pick #{pick_num} — Round {round_num}",
+            color=0x7289da,
+        )
+        status_tag = "🌟 Rookie" if picked.is_rookie else "⭐ Veteran"
+        embed.add_field(name="Drafter", value="Bot 🤖", inline=True)
+        embed.add_field(name="Musher", value=f"**{picked.name}**", inline=True)
+        embed.add_field(name="Status", value=status_tag, inline=True)
+        await channel.send(embed=embed)
+
+    if mock.is_complete:
+        await channel.send("🎮 **Mock draft complete!** Run `/mock_reset` for another practice round.")
+    elif not mock.is_complete and mock.current_drafter_id != bot.user.id:
+        next_id = mock.current_drafter_id
+        await channel.send(
+            f"<@{next_id}> — you're on the clock in the mock draft! 🎮 "
+            f"Round {mock.current_round}. Use `/mock_pick`."
+        )
 
 
 # ── bot events ─────────────────────────────────────────────────────────────
@@ -464,7 +499,8 @@ async def allpicks(interaction: discord.Interaction):
 # ── mock draft commands ─────────────────────────────────────────────────────
 
 @bot.tree.command(name="mock_start", description="Start a mock draft using the configured participants")
-async def mock_start(interaction: discord.Interaction):
+@app_commands.describe(include_bot="Add the bot as a CPU player (great for solo testing)")
+async def mock_start(interaction: discord.Interaction, include_bot: bool = False):
     live = get_live(interaction.channel_id)
     if not live.is_configured:
         await interaction.response.send_message(
@@ -475,7 +511,14 @@ async def mock_start(interaction: discord.Interaction):
         return
 
     mock = get_mock(interaction.channel_id)
-    mock.configure_from_ids(live.participants[:], live.names.copy(), live.picks_per_person)
+    participants = live.participants[:]
+    names = live.names.copy()
+
+    if include_bot:
+        participants.append(bot.user.id)
+        names[bot.user.id] = f"{bot.user.display_name} 🤖"
+
+    mock.configure_from_ids(participants, names, live.picks_per_person)
     mock.randomize()
     mock.start()
 
@@ -495,9 +538,14 @@ async def mock_start(interaction: discord.Interaction):
     embed.set_footer(text="Use /mock_pick to draft · /mock_reset to clear · /mock_status to check state")
 
     await interaction.response.send_message(embed=embed)
-    await interaction.channel.send(
-        f"<@{on_clock_id}> — you're first in the mock draft! Use `/mock_pick` to go."
-    )
+
+    # If bot goes first, start auto-picking immediately
+    if on_clock_id == bot.user.id:
+        await bot_auto_pick(interaction.channel, mock)
+    else:
+        await interaction.channel.send(
+            f"<@{on_clock_id}> — you're first in the mock draft! Use `/mock_pick` to go."
+        )
 
 
 @bot.tree.command(name="mock_pick", description="Make a pick in the mock draft")
@@ -527,6 +575,8 @@ async def mock_pick(interaction: discord.Interaction, musher: str):
             "🎮 **Mock draft complete!** Run `/mock_reset` for another practice round, "
             "or `/mock_start` to try a different order."
         )
+    elif mock.current_drafter_id == bot.user.id:
+        await bot_auto_pick(interaction.channel, mock)
     else:
         next_id = mock.current_drafter_id
         await interaction.channel.send(
@@ -589,7 +639,7 @@ async def draft_help(interaction: discord.Interaction):
     embed.add_field(
         name="🎮 Mock Draft",
         value=(
-            "`/mock_start` — start a practice draft\n"
+            "`/mock_start` — start a practice draft (use `include_bot:True` to add a CPU player)\n"
             "`/mock_pick` — make a pick in the mock draft\n"
             "`/mock_available` — available mushers in mock\n"
             "`/mock_status` — mock draft status\n"
