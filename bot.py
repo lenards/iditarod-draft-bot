@@ -558,6 +558,60 @@ async def mock_reset(interaction: discord.Interaction):
     )
 
 
+# ── help ───────────────────────────────────────────────────────────────────
+
+@bot.tree.command(name="draft_help", description="Show all available draft bot commands")
+async def draft_help(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="🐕 Iditarod Fantasy Draft Bot — Commands",
+        description="Snake draft bot for the 2026 Iditarod Trail Sled Dog Race.\nEvery drafter must pick **at least one Rookie** musher!",
+        color=0x1a6b3c,
+    )
+    embed.add_field(
+        name="📋 Draft Info",
+        value=(
+            "`/status` — full draft status, who's on the clock\n"
+            "`/whos_up` — quick one-liner: who's on the clock\n"
+            "`/available` — list undrafted mushers (filter by Rookie/Veteran)\n"
+            "`/allpicks` — see everyone's picks at once"
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="🎯 Making Picks",
+        value=(
+            "`/pick` — draft a musher (your turn only, autocomplete available)\n"
+            "`/mypicks` — see your picks (private)\n"
+            "`/picks` — see any participant's picks"
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="🎮 Mock Draft",
+        value=(
+            "`/mock_start` — start a practice draft\n"
+            "`/mock_pick` — make a pick in the mock draft\n"
+            "`/mock_available` — available mushers in mock\n"
+            "`/mock_status` — mock draft status\n"
+            "`/mock_reset` — clear the mock draft"
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="⚙️ Admin Only",
+        value=(
+            "`/setup` — configure participants and rounds\n"
+            "`/randomize` — shuffle the draft order\n"
+            "`/set_order` — set a specific draft order\n"
+            "`/draft_start` — begin the live draft\n"
+            "`/draft_reset` — reset everything"
+        ),
+        inline=False,
+    )
+    embed.set_footer(text="36 mushers · 13 Rookies · 23 Veterans · Snake format")
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
 # ── run ────────────────────────────────────────────────────────────────────
 
 bot.run(TOKEN)
