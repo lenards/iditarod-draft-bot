@@ -254,9 +254,9 @@ async def setup(
     user8: Optional[discord.Member] = None,
 ):
     members = [u for u in [user1, user2, user3, user4, user5, user6, user7, user8] if u]
-    if len(members) < 2:
+    if len(members) < 1:
         await interaction.response.send_message(
-            "❌ Need at least 2 participants. Add them with the `user1`, `user2`, … parameters.",
+            "❌ Need at least 1 participant. Use `include_bot:True` in `/mock_start` to add a CPU player.",
             ephemeral=True,
         )
         return
