@@ -9,20 +9,35 @@ from session import DraftSession, ALL_MUSHERS
 load_dotenv()
 
 TOKEN = os.environ["DISCORD_TOKEN"]
-DRAFT_CHANNEL_ID = int(os.environ.get("DRAFT_CHANNEL_ID", "0")) or None
+_channel_ids = os.environ.get("DRAFT_CHANNEL_IDS", "")
+DRAFT_CHANNEL_IDS: set[int] = {
+    int(cid.strip()) for cid in _channel_ids.split(",") if cid.strip().isdigit()
+}
 
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Two independent draft sessions — live and mock
-live = DraftSession(label="Live Draft")
-mock = DraftSession(label="Mock Draft")
+# Sessions keyed by channel ID — each channel is an independent league
+live_sessions: dict[int, DraftSession] = {}
+mock_sessions: dict[int, DraftSession] = {}
+
+
+def get_live(channel_id: int) -> DraftSession:
+    if channel_id not in live_sessions:
+        live_sessions[channel_id] = DraftSession(label="Live Draft")
+    return live_sessions[channel_id]
+
+
+def get_mock(channel_id: int) -> DraftSession:
+    if channel_id not in mock_sessions:
+        mock_sessions[channel_id] = DraftSession(label="Mock Draft")
+    return mock_sessions[channel_id]
 
 
 # ── channel guard ──────────────────────────────────────────────────────────
 
 def in_draft_channel(interaction: discord.Interaction) -> bool:
-    return DRAFT_CHANNEL_ID is None or interaction.channel_id == DRAFT_CHANNEL_ID
+    return not DRAFT_CHANNEL_IDS or interaction.channel_id in DRAFT_CHANNEL_IDS
 
 
 # ── embed builders ─────────────────────────────────────────────────────────
@@ -154,6 +169,7 @@ def all_picks_embed(session: DraftSession) -> discord.Embed:
 # ── autocomplete ───────────────────────────────────────────────────────────
 
 async def musher_autocomplete(interaction: discord.Interaction, current: str):
+    live = get_live(interaction.channel_id)
     source = live.available() if live.is_configured else ALL_MUSHERS
     return [
         app_commands.Choice(name=m.name, value=m.name)
@@ -163,6 +179,7 @@ async def musher_autocomplete(interaction: discord.Interaction, current: str):
 
 
 async def mock_musher_autocomplete(interaction: discord.Interaction, current: str):
+    mock = get_mock(interaction.channel_id)
     source = mock.available() if mock.is_configured else ALL_MUSHERS
     return [
         app_commands.Choice(name=m.name, value=m.name)
@@ -209,6 +226,7 @@ async def setup(
         )
         return
 
+    live = get_live(interaction.channel_id)
     live.configure(members, picks_per_person=rounds)
 
     rookies = sum(1 for m in ALL_MUSHERS if m.is_rookie)
@@ -242,6 +260,7 @@ async def setup(
 @bot.tree.command(name="randomize", description="[Admin] Randomly shuffle the draft order")
 @app_commands.checks.has_permissions(administrator=True)
 async def randomize(interaction: discord.Interaction):
+    live = get_live(interaction.channel_id)
     if not live.is_configured:
         await interaction.response.send_message("❌ Run `/setup` first!", ephemeral=True)
         return
@@ -279,6 +298,14 @@ async def set_order(
         await interaction.response.send_message("❌ Can't change the order after the draft has started.", ephemeral=True)
         return
 
+    live = get_live(interaction.channel_id)
+    if not live.is_configured:
+        await interaction.response.send_message("❌ Run `/setup` first!", ephemeral=True)
+        return
+    if live.is_active:
+        await interaction.response.send_message("❌ Can't change the order after the draft has started.", ephemeral=True)
+        return
+
     members = [m for m in [first, second, third, fourth, fifth, sixth, seventh, eighth] if m]
     ok, msg = live.set_explicit_order(members)
     if not ok:
@@ -293,6 +320,7 @@ async def set_order(
 @bot.tree.command(name="draft_start", description="[Admin] Start the live draft")
 @app_commands.checks.has_permissions(administrator=True)
 async def draft_start(interaction: discord.Interaction):
+    live = get_live(interaction.channel_id)
     if not live.is_configured:
         await interaction.response.send_message("❌ Run `/setup` first!", ephemeral=True)
         return
@@ -327,7 +355,7 @@ async def draft_start(interaction: discord.Interaction):
 @bot.tree.command(name="draft_reset", description="[Admin] Completely reset the live draft")
 @app_commands.checks.has_permissions(administrator=True)
 async def draft_reset(interaction: discord.Interaction):
-    live.reset()
+    get_live(interaction.channel_id).reset()
     await interaction.response.send_message(
         "🔄 Live draft has been reset. Run `/setup` to configure a new draft."
     )
@@ -343,7 +371,7 @@ async def draft_reset(interaction: discord.Interaction):
     app_commands.Choice(name="Veterans only", value="veteran"),
 ])
 async def available_cmd(interaction: discord.Interaction, filter: str = "all"):
-    await interaction.response.send_message(embed=available_embed(live, filter))
+    await interaction.response.send_message(embed=available_embed(get_live(interaction.channel_id), filter))
 
 
 @bot.tree.command(name="pick", description="Draft a musher (only works when it's your turn)")
@@ -356,6 +384,7 @@ async def pick(interaction: discord.Interaction, musher: str):
         )
         return
 
+    live = get_live(interaction.channel_id)
     success, message, picked, pick_num, round_num = live.make_pick(interaction.user.id, musher)
 
     if not success:
@@ -387,13 +416,32 @@ async def pick(interaction: discord.Interaction, musher: str):
         )
 
 
+@bot.tree.command(name="whos_up", description="Show who is currently on the clock")
+async def whos_up(interaction: discord.Interaction):
+    live = get_live(interaction.channel_id)
+    if not live.is_active:
+        await interaction.response.send_message("The draft hasn't started yet.", ephemeral=True)
+        return
+    if live.is_complete:
+        await interaction.response.send_message("The draft is complete!", ephemeral=True)
+        return
+    on_clock_id = live.current_drafter_id
+    next_id = live.next_drafter_id
+    on_deck = f" | ⏭ On deck: {live.names.get(next_id)}" if next_id else ""
+    await interaction.response.send_message(
+        f"🎯 **{live.names.get(on_clock_id)}** is on the clock "
+        f"(Round {live.current_round}, pick {live.overall_pick_num}/{live.total_picks}){on_deck}"
+    )
+
+
 @bot.tree.command(name="status", description="Show the current draft status")
 async def status(interaction: discord.Interaction):
-    await interaction.response.send_message(embed=status_embed(live))
+    await interaction.response.send_message(embed=status_embed(get_live(interaction.channel_id)))
 
 
 @bot.tree.command(name="mypicks", description="See your current draft picks (private)")
 async def mypicks(interaction: discord.Interaction):
+    live = get_live(interaction.channel_id)
     embed = picks_embed(live, interaction.user.id, interaction.user.display_name)
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -401,6 +449,7 @@ async def mypicks(interaction: discord.Interaction):
 @bot.tree.command(name="picks", description="See a participant's draft picks")
 @app_commands.describe(user="Which participant to view (defaults to you)")
 async def picks_cmd(interaction: discord.Interaction, user: Optional[discord.Member] = None):
+    live = get_live(interaction.channel_id)
     target = user or interaction.user
     await interaction.response.send_message(
         embed=picks_embed(live, target.id, target.display_name)
@@ -409,13 +458,14 @@ async def picks_cmd(interaction: discord.Interaction, user: Optional[discord.Mem
 
 @bot.tree.command(name="allpicks", description="See everyone's picks at once")
 async def allpicks(interaction: discord.Interaction):
-    await interaction.response.send_message(embed=all_picks_embed(live))
+    await interaction.response.send_message(embed=all_picks_embed(get_live(interaction.channel_id)))
 
 
 # ── mock draft commands ─────────────────────────────────────────────────────
 
 @bot.tree.command(name="mock_start", description="Start a mock draft using the configured participants")
 async def mock_start(interaction: discord.Interaction):
+    live = get_live(interaction.channel_id)
     if not live.is_configured:
         await interaction.response.send_message(
             "❌ The draft participants haven't been configured yet. "
@@ -424,6 +474,7 @@ async def mock_start(interaction: discord.Interaction):
         )
         return
 
+    mock = get_mock(interaction.channel_id)
     mock.configure_from_ids(live.participants[:], live.names.copy(), live.picks_per_person)
     mock.randomize()
     mock.start()
@@ -453,6 +504,7 @@ async def mock_start(interaction: discord.Interaction):
 @app_commands.describe(musher="Start typing to search available mushers")
 @app_commands.autocomplete(musher=mock_musher_autocomplete)
 async def mock_pick(interaction: discord.Interaction, musher: str):
+    mock = get_mock(interaction.channel_id)
     success, message, picked, pick_num, round_num = mock.make_pick(interaction.user.id, musher)
 
     if not success:
@@ -485,7 +537,7 @@ async def mock_pick(interaction: discord.Interaction, musher: str):
 
 @bot.tree.command(name="mock_status", description="Show the mock draft status")
 async def mock_status(interaction: discord.Interaction):
-    await interaction.response.send_message(embed=status_embed(mock))
+    await interaction.response.send_message(embed=status_embed(get_mock(interaction.channel_id)))
 
 
 @bot.tree.command(name="mock_available", description="List available mushers in the mock draft")
@@ -495,12 +547,12 @@ async def mock_status(interaction: discord.Interaction):
     app_commands.Choice(name="Veterans only", value="veteran"),
 ])
 async def mock_available(interaction: discord.Interaction, filter: str = "all"):
-    await interaction.response.send_message(embed=available_embed(mock, filter))
+    await interaction.response.send_message(embed=available_embed(get_mock(interaction.channel_id), filter))
 
 
 @bot.tree.command(name="mock_reset", description="Reset the mock draft")
 async def mock_reset(interaction: discord.Interaction):
-    mock.reset()
+    get_mock(interaction.channel_id).reset()
     await interaction.response.send_message(
         "🎮 Mock draft reset. Run `/mock_start` for another practice round."
     )

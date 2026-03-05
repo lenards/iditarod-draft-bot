@@ -9,7 +9,7 @@ A Discord slash-command bot for running a snake-format fantasy league draft for 
 - Rookie requirement enforced (every drafter must pick ≥1 Rookie)
 - "On the clock" pings so the right person gets notified
 - Mock draft mode for practice runs before the real thing
-- Restrict bot to a specific channel via `DRAFT_CHANNEL_ID`
+- Restrict bot to a specific channel via `DRAFT_CHANNEL_IDS`
 
 ## Setup
 
@@ -35,7 +35,7 @@ Right-click your draft channel → **Copy Channel ID**.
 3. Select this repo
 4. In **Variables**, add:
    - `DISCORD_TOKEN` = your bot token
-   - `DRAFT_CHANNEL_ID` = your channel ID (optional)
+   - `DRAFT_CHANNEL_IDS` = comma-separated channel IDs, e.g. `123,456` (optional)
 5. Railway auto-detects Python and runs the `Procfile` worker
 
 ### 4. Local development
