@@ -1,37 +1,35 @@
-Musher Name,Sex,City,State,Country,Status
-Sam Martin,M,Chelmsford,MA,,Rookie
-Ryan Redington,M,Knik,AK,USA,Veteran
-Jesse Terry,M,Sioux Lookout,Ontario,CANADA,Rookie
-Jaye Foucher,F,Wentworth,NH,USA,Rookie
-Kevin Hansen,M,Kotzebue,AK,USA,Rookie
-Josi (Thyr) Shelley,F,Fairbanks,AK,USA,Veteran
-Hanna Lyrek,F,Alta,,NORWAY,Veteran
-Jody Potts-Joseph,F,Eagle Village,AK,USA,Rookie
-Michelle Phillips,F,Ten Mile,YT,CANADA,Veteran
-Mille Porsild,F,,,DENMARK,Veteran
-Sam Paperman,M,Seward,AK,USA,Rookie
-Jeff Deeter,M,Fairbanks,AK,USA,Veteran
-Sadie Lindquist,F,Moose Pass,AK,USA,Rookie
-Grayson Bruton,M,Tok,AK,USA,Veteran
-Brenda Mackey,F,Fairbanks,AK,US,Rookie
-Wade Marrs,M,Willow,AK,USA,Veteran
-Peter Kaiser,M,Bethel,AK,USA,Veteran
-Riley Dyche,M,Big Lake,AK,USA,Veteran
-Jason Mackey,M,Fairbanks,AK,USA,Veteran
-Joseph Sabin,M,Two Rivers,AK,USA,Rookie
-Gabe Dunham,F,Willow,AK,USA,Veteran
-Keaton Loebrich,M,Fairbanks,AK,USA,Veteran
-Travis Beals,M,Seward,AK,USA,Veteran
-Rohn Buser,M,Big Lake,AK,USA,Veteran
-Jessie Holmes,M,Brushkana,AK,USA,Veteran
-Chad Stoddard,M,Anchorage,AK,USA,Veteran
-Sydnie Bahl,F,Wasilla,AK,USA,Rookie
-Bailey Vitello,M,Nenana,AK,USA,Veteran
-Matt Hall,M,Two Rivers,AK,USA,Veteran
-Adam Lindenmuth,M,Willow,AK,USA,Rookie
-Lauro Eklund,M,Two Rivers,AK,USA,Veteran
-Richie Beattie,M,Fairbanks,AK,USA,Rookie
-Kjell Rokke,M,,,SWITZERLAND,Rookie
-Thomas Waerner,M,Torpa,,NORWAY,Veteran
-Paige Drobny,F,Cantwell,AK,USA,Veteran
-Jessie Royer,F,Seeley Lake,MT,USA,Veteran
+Bib #,Musher Name,Sex,City,State,Country,Status
+2,Adam Lindenmuth,M,Willow,AK,USA,Rookie
+3,Rohn Buser,M,Talkeetna,AK,USA,Veteran
+4,Travis Beals,M,Seward,AK,USA,Veteran
+5,Ryan Redington,M,Knik,AK,USA,Veteran
+7,Jessie Holmes,M,Brushkana,AK,USA,Veteran
+8,Chad Stoddard,M,Anchorage,AK,USA,Veteran
+9,Bailey Vitello,M,Nenana,AK,USA,Veteran
+10,Paige Drobny,F,Cantwell,AK,USA,Veteran
+11,Joseph Sabin,M,Two Rivers,AK,USA,Rookie
+12,Keaton Loebrich,M,Fairbanks,AK,USA,Veteran
+14,Jessie Royer,F,Seeley Lake,MT,USA,Veteran
+15,Mille Porsild,F,,,DENMARK,Veteran
+16,Matt Hall,M,Two Rivers,AK,USA,Veteran
+17,Lauro Eklund,M,Two Rivers,AK,USA,Veteran
+18,Gabe Dunham,F,Willow,AK,USA,Veteran
+19,Riley Dyche,M,Big Lake,AK,USA,Veteran
+20,Sydnie Bahl,F,Wasilla,AK,USA,Rookie
+21,Richie Beattie,M,Fairbanks,AK,USA,Rookie
+22,Jason Mackey,M,Fairbanks,AK,USA,Veteran
+23,Hanna Lyrek,F,Alta,,NORWAY,Veteran
+24,Sam Martin,M,Chelmsford,MA,,Rookie
+25,Sam Paperman,M,Seward,AK,USA,Rookie
+26,Wade Marrs,M,Willow,AK,USA,Veteran
+27,Josi (Thyr) Shelley,F,Fairbanks,AK,USA,Veteran
+28,Jaye Foucher,F,Wentworth,NH,USA,Rookie
+29,Jesse Terry,M,Sioux Lookout,Ontario,CANADA,Rookie
+30,Michelle Phillips,F,Ten Mile,YT,CANADA,Veteran
+31,Sadie Lindquist,F,Moose Pass,AK,USA,Rookie
+32,Jody Potts-Joseph,F,Eagle Village,AK,USA,Rookie
+33,Peter Kaiser,M,Bethel,AK,USA,Veteran
+34,Kevin Hansen,M,Kotzebue,AK,USA,Rookie
+35,Jeff Deeter,M,Fairbanks,AK,USA,Veteran
+36,Brenda Mackey,F,Fairbanks,AK,US,Rookie
+37,Grayson Bruton,M,Tok,AK,USA,Veteran
