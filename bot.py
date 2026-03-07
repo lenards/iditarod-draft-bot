@@ -440,8 +440,9 @@ async def pick(interaction: discord.Interaction, musher: str):
 
     if live.is_complete:
         await interaction.channel.send(
-            "🏁 **The draft is complete!** Use `/allpicks` to see everyone's teams. Good luck on the trail! 🐕"
+            "🏁 **The draft is complete!** Good luck on the trail! 🐕"
         )
+        await interaction.channel.send(embed=all_picks_embed(live))
     else:
         next_id = live.current_drafter_id
         await interaction.channel.send(
